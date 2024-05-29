@@ -86,8 +86,6 @@ def main():
 
         query = st.text_input("Ask a question about the PDF")
         if query:
-            # Debug: Print user's query
-            st.write(f"User's query: {query}")
 
             answer = chain.invoke({"question": query})
             

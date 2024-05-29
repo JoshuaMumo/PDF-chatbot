@@ -3,6 +3,8 @@ from transformers import GPTNeoForCausalLM, GPT2Tokenizer, AutoModel, AutoTokeni
 from PyPDF2 import PdfReader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import torch
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
 
 # Sidebar information
 with st.sidebar:
@@ -28,14 +30,12 @@ def get_text_chunks(text):
     return chunks
 
 # Function to get embeddings for text chunks
-def get_embeddings(chunks):
+def get_embeddings(chunks, model, tokenizer):
     embeddings = []
-    embedding_model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
-    embedding_tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
     for chunk in chunks:
-        inputs = embedding_tokenizer(chunk, return_tensors="pt", truncation=True, padding=True)
+        inputs = tokenizer(chunk, return_tensors="pt", truncation=True, padding=True)
         with torch.no_grad():
-            embedding = embedding_model(**inputs).last_hidden_state.mean(dim=1).squeeze().tolist()
+            embedding = model(**inputs).last_hidden_state.mean(dim=1).squeeze().cpu().numpy()
         embeddings.append(embedding)
     return embeddings
 
@@ -52,18 +52,32 @@ def main():
             text += page.extract_text()
         
         chunks = get_text_chunks(text)
-        embeddings = get_embeddings(chunks)
 
+        # Load embedding model and tokenizer
+        embedding_model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+        embedding_tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+        embeddings = get_embeddings(chunks, embedding_model, embedding_tokenizer)
+
+        # Load generation model and tokenizer
         generation_model_name = "EleutherAI/gpt-neo-125M"
         generation_model = GPTNeoForCausalLM.from_pretrained(generation_model_name)
         generation_tokenizer = GPT2Tokenizer.from_pretrained(generation_model_name)
 
         query = st.text_input("Ask a question about the PDF")
         if query:
-            # Encode the query
-            inputs = generation_tokenizer.encode(query, return_tensors="pt")
+            # Get embedding for the query
+            query_inputs = embedding_tokenizer(query, return_tensors="pt", truncation=True, padding=True)
+            with torch.no_grad():
+                query_embedding = embedding_model(**query_inputs).last_hidden_state.mean(dim=1).squeeze().cpu().numpy()
 
-            # Generate a response from the model
+            # Find the most relevant chunk
+            similarities = cosine_similarity([query_embedding], embeddings)
+            most_relevant_chunk_idx = np.argmax(similarities)
+            most_relevant_chunk = chunks[most_relevant_chunk_idx]
+
+            # Generate a response using the most relevant chunk and the query
+            prompt = f"Context: {most_relevant_chunk}\n\nQuestion: {query}\nAnswer:"
+            inputs = generation_tokenizer.encode(prompt, return_tensors="pt")
             outputs = generation_model.generate(inputs, max_length=1024, num_return_sequences=1)
             answer = generation_tokenizer.decode(outputs[0], skip_special_tokens=True)
             st.write(answer)

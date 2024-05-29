@@ -31,11 +31,16 @@ def main():
         text = ""
         for page in pdf_reader.pages:
             text += page.extract_text()
+        
+        # Debug: Print extracted text length
+        st.write(f"Extracted text length: {len(text)} characters")
 
         # Function to split text into chunks
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=7500, chunk_overlap=100)
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100,length_function=len)
         chunks = text_splitter.split_text(text)
         
+        # Debug: Print number of chunks
+        st.write(f"Number of text chunks: {len(chunks)}")
 
         # Add to vector database
         vector_db = Chroma.from_texts(
@@ -44,6 +49,8 @@ def main():
             collection_name="local-rag"
         )
         
+        # Debug: Confirm vector database creation
+        st.write("Vector database created and chunks embedded.")
 
         # LLM from Ollama
         local_model = "llama2"
@@ -79,10 +86,15 @@ def main():
 
         query = st.text_input("Ask a question about the PDF")
         if query:
+            # Debug: Print user's query
+            st.write(f"User's query: {query}")
+
             answer = chain.invoke({"question": query})
+            
+            # Debug: Print retrieved answer
+            st.write(f"Retrieved answer: {answer}")
+
             st.write(answer)
-        else:
-           st.write("The uploaded PDF is empty or does not contain extractable text.")
 
 if __name__ == '__main__':
     main()

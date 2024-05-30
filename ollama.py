@@ -31,16 +31,12 @@ def main():
         text = ""
         for page in pdf_reader.pages:
             text += page.extract_text()
-        
-        # Debug: Print extracted text length
-        st.write(f"Extracted text length: {len(text)} characters")
+               
 
         # Function to split text into chunks
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100,length_function=len)
         chunks = text_splitter.split_text(text)
-        
-        # Debug: Print number of chunks
-        st.write(f"Number of text chunks: {len(chunks)}")
+       
 
         # Add to vector database
         vector_db = Chroma.from_texts(

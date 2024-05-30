@@ -13,7 +13,7 @@ with st.sidebar:
         ## About
         This app is an LLM powered ChatBot built using:
         - [Streamlit](https://streamlit.io/)
-        - [LangChain](https://langchain.com/)
+        - [LangChain](https://github.com/langchain-ai/langchain)
         - [ChromaDB](https://www.trychroma.com/)
         - [Transformers](https://huggingface.co/transformers/)
     ''')
@@ -54,12 +54,12 @@ def main():
         chunks = get_text_chunks(text)
 
         # Load embedding model and tokenizer
-        embedding_model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
-        embedding_tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+        embedding_model = AutoModel.from_pretrained("meta-llama/Meta-Llama-3-8B-Instruct")
+        embedding_tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B-Instruct")
         embeddings = get_embeddings(chunks, embedding_model, embedding_tokenizer)
 
         # Load generation model and tokenizer
-        generation_model_name = "EleutherAI/gpt-neo-125M"
+        generation_model_name = "meta-llama/Meta-Llama-3-8B-Instruct"
         generation_model = GPTNeoForCausalLM.from_pretrained(generation_model_name)
         generation_tokenizer = GPT2Tokenizer.from_pretrained(generation_model_name)
 

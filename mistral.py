@@ -20,8 +20,9 @@ with st.sidebar:
         - [ChromaDB](https://www.trychroma.com/)
     ''')
     st.write("Built by Joshua & Hassan")
-    def main():
-         st.title("LLM ChatApp")
+
+def main():
+    st.title("LLM ChatApp")
     st.header("Chat with PDF")
 
     pdf = st.file_uploader("Upload PDF", type="pdf")
